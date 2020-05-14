@@ -7,12 +7,46 @@ const clientId = '704741268021969027';
 let processes = [];
 const currentPid = 0;
 
+class RPC {
+  constructor() {
+    this._rpc = null;
+    this._connect();
+    this._isConnect = false;
+  }
+
+  async _connect() {
+    this._rpc = new Client({transport: 'ipc'});
+    this._rpc.once('ready', async ()=>{
+      console.log('Successfully connected to Discord.');
+      this._isConnect = true;
+    });
+    try {
+      await this._rpc.login({clientId});
+      this._rpc.transport.once('close', async ()=>{
+        this._isConnect = false;
+        console.log('Donnected from Discord.');
+        await new Promise((resolve)=>setTimeout(resolve, 10000));
+        this._connect();
+      });
+    } catch (err) {
+      console.log('Failed to connect.');
+      console.log(err);
+      await new Promise((resolve)=>setTimeout(resolve, 10000));
+      this._connect();
+    }
+  }
+
+  async clearActivity() {
+    if (this._isConnect) this._rpc.clearActivity();
+  }
+
+  async setActivity(activity) {
+    if (this._isConnect) this._rpc.setActivity(activity);
+  }
+}
+
 (async ()=>{
-  const rpc = new Client({transport: 'ipc'});
-  rpc.once('ready', async ()=>{
-    console.log('Successfully connected to Discord.');
-  });
-  await rpc.login({clientId});
+  const rpc = new RPC();
   setInterval(async () => {
     const results = await promisify(ps.lookup)({command: 'ssh'});
     const sshProcesses = results

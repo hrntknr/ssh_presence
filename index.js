@@ -57,6 +57,7 @@ const currentPid = 0;
         continue;
       }
       target = arg;
+      break;
     }
     const server = target.split('@').pop();
 

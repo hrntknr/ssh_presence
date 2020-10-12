@@ -1,6 +1,7 @@
-const {Client} = require('discord-rpc');
+const { Client } = require('discord-rpc');
 const ps = require('ps-node');
-const {promisify} = require('util');
+const { promisify } = require('util');
+const debyList = require('./denylist.json');
 
 const multiParams = 'BbcDEeFIiJLlmOopQRSWw';
 const clientId = '704741268021969027';
@@ -15,23 +16,23 @@ class RPC {
   }
 
   async _connect() {
-    this._rpc = new Client({transport: 'ipc'});
-    this._rpc.once('ready', async ()=>{
+    this._rpc = new Client({ transport: 'ipc' });
+    this._rpc.once('ready', async () => {
       console.log('Successfully connected to Discord.');
       this._isConnect = true;
     });
     try {
-      await this._rpc.login({clientId});
-      this._rpc.transport.once('close', async ()=>{
+      await this._rpc.login({ clientId });
+      this._rpc.transport.once('close', async () => {
         this._isConnect = false;
         console.log('Donnected from Discord.');
-        await new Promise((resolve)=>setTimeout(resolve, 10000));
+        await new Promise((resolve) => setTimeout(resolve, 10000));
         this._connect();
       });
     } catch (err) {
       console.log('Failed to connect.');
       console.log(err);
-      await new Promise((resolve)=>setTimeout(resolve, 10000));
+      await new Promise((resolve) => setTimeout(resolve, 10000));
       this._connect();
     }
   }
@@ -45,15 +46,15 @@ class RPC {
   }
 }
 
-(async ()=>{
+(async () => {
   const rpc = new RPC();
   setInterval(async () => {
-    const results = await promisify(ps.lookup)({command: 'ssh'});
+    const results = await promisify(ps.lookup)({ command: 'ssh' });
     const sshProcesses = results
-      .filter((item)=>item.command.split('/').pop() === 'ssh');
+      .filter((item) => item.command.split('/').pop() === 'ssh');
 
-    sshProcesses.forEach((item)=>{
-      const index = processes.findIndex((oldItem)=>oldItem.pid == item.pid);
+    sshProcesses.forEach((item) => {
+      const index = processes.findIndex((oldItem) => oldItem.pid == item.pid);
       if (index === -1) {
         item.time = new Date();
       } else {
@@ -66,8 +67,8 @@ class RPC {
       await rpc.clearActivity();
       return;
     }
-    const newest = processes.reduce((a, b)=>{
-      if (a.time>b.time) {
+    const newest = processes.reduce((a, b) => {
+      if (a.time > b.time) {
         return a;
       } else {
         return b;
@@ -95,10 +96,14 @@ class RPC {
     }
     const server = target.split('@').pop();
 
+    if (debyList.indexOf(server) != -1) {
+      return;
+    }
+
     const activity = {
       state: `Server: ${server}`,
       details: 'Connecting via SSH',
-      startTimestamp: Math.floor(newest.time/1000),
+      startTimestamp: Math.floor(newest.time / 1000),
       largeImageKey: 'ssh',
       largeImageText: 'ssh',
     };
